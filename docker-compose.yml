@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  ping-challenge:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ping-injection-ctf
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    volumes:
+      # Mount source code for development (remove in production)
+      - ./public:/usr/src/app/public:ro
+      - ./server.js:/usr/src/app/server.js:ro
+      - ./index.html:/usr/src/app/index.html:ro
+    restart: unless-stopped
+    # Security settings - somewhat permissive for CTF challenge
+    cap_add:
+      - NET_RAW  # Needed for ping command
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - ping-net
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  ping-net:
+    driver: bridge
